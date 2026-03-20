@@ -27,7 +27,7 @@ access (replay mode). This makes API client tests fast, hermetic, and
 fully deterministic.
 
 Adapters provide the glue to specific HTTP client libraries such as
-LWP, HTTP::Tiny, and Mojo. Serializers control how fixtures are stored
+LWP. Serializers control how fixtures are stored
 on disk.
 
 # MODES
@@ -66,8 +66,6 @@ Adapters implement:
 Available adapters:
 
 - LWP
-- HTTP\_Tiny
-- Mojo
 
 You may also supply a custom adapter object.
 
@@ -79,6 +77,126 @@ Available serializers:
 
 - YAML (default)
 - JSON
+
+# USING RECORD AND REPLAY IN REAL-WORLD APPLICATIONS
+
+This section describes the recommended workflow for using
+`Test::HTTP::Scenario` in a real-world test suite. The goal is to
+capture real HTTP traffic once (record mode) and then replay it
+deterministically in all subsequent test runs (replay mode).
+
+## Overview
+
+Record/replay is designed for API client libraries that normally make
+live HTTP requests. In record mode, the module performs real network
+calls and stores normalized request/response pairs in a fixture file.
+In replay mode, the module prevents all network access and returns
+synthetic responses reconstructed from the fixture.
+
+This allows your test suite to:
+
+- run without network access
+- avoid flakiness caused by external services
+- run quickly and deterministically in CI
+- capture complex multi-step API flows once and reuse them
+
+## Typical Workflow
+
+### Step 1: Write your test using `with_http_scenario`
+
+    use Test::Most;
+    use Test::HTTP::Scenario qw(with_http_scenario);
+
+    with_http_scenario(
+        name    => 'get_user_flow',
+        file    => 't/fixtures/get_user_flow.yaml',
+        mode    => $ENV{SCENARIO_MODE} || 'replay',
+        adapter => 'LWP',
+        sub {
+            my $user = MyAPI->new->get_user(42);
+            is $user->{id}, 42, 'user id matches';
+        },
+    );
+
+### Step 2: Run the test suite in record mode
+
+    $ SCENARIO_MODE=record prove -l t/get_user_flow.t
+
+This performs real HTTP requests and writes the fixture file:
+
+    t/fixtures/get_user_flow.yaml
+
+### Step 3: Commit the fixture file to version control
+
+The fixture becomes part of your test assets. It should be treated like
+any other test data file.
+
+### Step 4: Run the test suite normally (replay mode)
+
+    $ prove -l t
+
+Replay mode:
+
+- loads the fixture
+- intercepts all HTTP requests
+- matches them against the recorded interactions
+- returns synthetic responses
+
+No network access is required.
+
+## Updating Fixtures
+
+If the API changes or you need to refresh the recorded data, simply
+delete the fixture file and re-run the test in record mode:
+
+    $ rm t/fixtures/get_user_flow.yaml
+    $ SCENARIO_MODE=record prove -l t/get_user_flow.t
+
+## Example: Multi-Step API Flow
+
+Record mode captures each request in order:
+
+    with_http_scenario(
+        name    => 'create_and_fetch',
+        file    => 't/fixtures/create_and_fetch.yaml',
+        mode    => $ENV{SCENARIO_MODE} || 'replay',
+        adapter => 'LWP',
+        sub {
+            my $api = MyAPI->new;
+
+            my $id = $api->create_user({ name => 'Alice' });
+            my $user = $api->get_user($id);
+
+            is $user->{name}, 'Alice';
+        },
+    );
+
+Replay mode enforces the same sequence, ensuring your client behaves
+correctly across multiple calls.
+
+## Notes
+
+- Replay mode never performs real HTTP requests.
+- Strict mode can be enabled to ensure all interactions are consumed.
+- Diffing mode provides detailed diagnostics when a request does not match.
+- Fixtures are stable across platforms and Perl versions.
+
+## API Specification
+
+### Input (Params::Validate::Strict)
+
+    name      => Str
+    file      => Str
+    mode      => 'record' | 'replay'
+    adapter   => Str | Object
+    serializer => Str (optional)
+    diffing   => Bool (optional)
+    strict    => Bool (optional)
+    CODE      => Coderef
+
+### Output (Returns::Set)
+
+    any value returned by the supplied coderef
 
 # METHODS
 
