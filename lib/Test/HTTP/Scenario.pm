@@ -31,7 +31,9 @@ Test::HTTP::Scenario - Deterministic record/replay of HTTP interactions for test
 
 =head1 DESCRIPTION
 
-Test::HTTP::Scenario provides a deterministic record/replay mechanism
+Test::HTTP::Scenario lets you test HTTP‑based code without ever hitting the real network,
+by recording real interactions once and replaying them forever.
+It provides a deterministic record/replay mechanism
 for HTTP-based test suites. It allows you to capture real HTTP
 interactions once (record mode) and replay them later without network
 access (replay mode). This makes API client tests fast, hermetic, and
