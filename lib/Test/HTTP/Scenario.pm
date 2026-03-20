@@ -9,6 +9,167 @@ use File::Slurper qw(read_text write_text);
 
 our @EXPORT_OK = qw(with_http_scenario);
 
+=head1 NAME
+
+Test::HTTP::Scenario - Deterministic record/replay of HTTP interactions for test suites
+
+=head1 SYNOPSIS
+
+  use Test::Most;
+  use Test::HTTP::Scenario qw(with_http_scenario);
+
+  with_http_scenario(
+      name    => 'get_user_basic',
+      file    => 't/fixtures/get_user_basic.yaml',
+      mode    => 'replay',
+      adapter => 'LWP',
+      sub {
+          my $user = $client->get_user(42);
+          cmp_deeply($user, superhashof({ id => 42 }));
+      },
+  );
+
+=head1 DESCRIPTION
+
+Test::HTTP::Scenario provides a deterministic record/replay mechanism
+for HTTP-based test suites. It allows you to capture real HTTP
+interactions once (record mode) and replay them later without network
+access (replay mode). This makes API client tests fast, hermetic, and
+fully deterministic.
+
+Adapters provide the glue to specific HTTP client libraries such as
+LWP, HTTP::Tiny, and Mojo. Serializers control how fixtures are stored
+on disk.
+
+=head1 MODES
+
+=head2 record
+
+Real HTTP requests are executed. Each request/response pair is
+normalized and appended to the fixture. The fixture file is written at
+the end of C<run()>.
+
+=head2 replay
+
+No real HTTP requests are made. Requests are matched against the
+fixture in order, and responses are reconstructed from stored data.
+
+=head1 STRICT MODE
+
+If C<strict =E<gt> 1> is enabled, replay mode requires that all
+recorded interactions are consumed. If the callback returns early,
+C<run()> croaks with a strict-mode error.
+
+=head1 DIFFING
+
+If C<diffing =E<gt> 1> (default), mismatched requests produce a
+detailed diff showing expected and actual method, URI, and normalized
+request structures.
+
+=head1 ADAPTERS
+
+Adapters implement:
+
+=over 4
+
+=item * request/response normalization
+
+=item * response reconstruction
+
+=item * temporary monkey-patching of the HTTP client library
+
+=back
+
+Available adapters:
+
+=over 4
+
+=item * LWP
+
+=item * HTTP_Tiny
+
+=item * Mojo
+
+=back
+
+You may also supply a custom adapter object.
+
+=head1 SERIALIZERS
+
+Serializers implement encoding and decoding of fixture files.
+
+Available serializers:
+
+=over 4
+
+=item * YAML (default)
+
+=item * JSON
+
+=back
+
+=head1 METHODS
+
+=head2 new
+
+Construct a new scenario object.
+
+=head3 Purpose
+
+Initializes a scenario with a name, fixture file, mode, adapter, and
+serializer. Loads adapter and serializer classes and binds the adapter
+to the scenario.
+
+=head3 Arguments
+
+=over 4
+
+=item * name (Str, required)
+
+Scenario name.
+
+=item * file (Str, required)
+
+Path to the fixture file.
+
+=item * mode (Str, required)
+
+Either C<record> or C<replay>.
+
+=item * adapter (Str|Object, required)
+
+Adapter name such as C<LWP> or an adapter object.
+
+=item * serializer (Str, optional)
+
+Serializer name, default C<YAML>.
+
+=item * diffing (Bool, optional)
+
+Enable or disable diffing, default true.
+
+=item * strict (Bool, optional)
+
+Enable or disable strict behaviour, default false.
+
+=back
+
+=head3 Returns
+
+A new L<Test::HTTP::Scenario> object.
+
+=head3 Side Effects
+
+Loads adapter and serializer classes dynamically. Binds the adapter to
+the scenario.
+
+=head3 Notes
+
+The adapter object persists across calls to C<run()>.
+
+=cut
+
+
 #----------------------------------------------------------------------#
 # Constructor
 #----------------------------------------------------------------------#
@@ -50,9 +211,51 @@ my $adapter = _build_adapter($args{adapter});
     return $self;
 }
 
-#----------------------------------------------------------------------#
-# Public API
-#----------------------------------------------------------------------#
+=head2 run
+
+Execute a coderef under scenario control.
+
+=head3 Purpose
+
+Installs adapter hooks, loads fixtures in replay mode, executes the
+callback, and saves fixtures in record mode. Ensures uninstall and
+save always occur.
+
+=head3 Arguments
+
+=over 4
+
+=item * CODE (Coderef, required)
+
+The code to execute while the adapter hooks are active.
+
+=back
+
+=head3 Returns
+
+Whatever the coderef returns, preserving list, scalar, or void context.
+
+=head3 Side Effects
+
+=over 4
+
+=item * Installs adapter hooks.
+
+=item * Loads fixtures in replay mode.
+
+=item * Saves fixtures in record mode.
+
+=item * Uninstalls adapter hooks at scope exit.
+
+=back
+
+=head3 Notes
+
+Exceptions propagate naturally. Strict mode enforces full consumption
+of recorded interactions.
+
+=cut
+
 
 sub run {
     my ($self, $code) = @_;
@@ -100,6 +303,32 @@ sub run {
     return $ret;
 }
 
+=head2 with_http_scenario
+
+Convenience wrapper for constructing and running a scenario.
+
+=head3 Purpose
+
+Creates a scenario object from key/value arguments and immediately
+executes C<run()> with the supplied coderef.
+
+=head3 Arguments
+
+Key/value pairs identical to C<new>, followed by a coderef.
+
+=head3 Returns
+
+Whatever the coderef returns.
+
+=head3 Side Effects
+
+Constructs a scenario and installs adapter hooks during execution.
+
+=head3 Notes
+
+The final argument must be a coderef.
+
+=cut
 
 sub with_http_scenario {
     my @args = @_;
@@ -120,6 +349,57 @@ sub with_http_scenario {
 
     return $self->run($code);
 }
+
+=head2 handle_request
+
+Handle a single HTTP request in record or replay mode.
+
+=head3 Purpose
+
+In record mode, performs the real HTTP request and stores the
+normalized request and response. In replay mode, matches the incoming
+request against stored interactions and returns a synthetic response.
+
+=head3 Arguments
+
+=over 4
+
+=item * req (Object)
+
+Adapter-specific request object.
+
+=item * do_real (Coderef)
+
+Coderef that performs the real HTTP request.
+
+=back
+
+=head3 Returns
+
+=over 4
+
+=item * In record mode: the real HTTP::Response.
+
+=item * In replay mode: a reconstructed HTTP::Response.
+
+=back
+
+=head3 Side Effects
+
+=over 4
+
+=item * Appends interactions in record mode.
+
+=item * Advances the internal cursor in replay mode.
+
+=back
+
+=head3 Notes
+
+Matching is currently based on method and URI only. Diffing mode
+produces detailed mismatch diagnostics.
+
+=cut
 
 sub handle_request {
 	my ($self, $req, $do_real) = @_;
@@ -225,6 +505,33 @@ sub _build_serializer {
     return $class->new;
 }
 
+=head2 _load_if_needed
+
+Load fixture interactions from disk if required.
+
+=head3 Purpose
+
+Populate the scenario's interactions array when in replay mode and the
+fixture has not yet been loaded.
+
+=head3 Arguments
+
+None.
+
+=head3 Returns
+
+Nothing.
+
+=head3 Side Effects
+
+Reads the fixture file from disk if it exists.
+
+=head3 Notes
+
+Idempotent. Does nothing if already loaded or not in replay mode.
+
+=cut
+
 sub _load_if_needed {
     my ($self) = @_;
 
@@ -246,6 +553,33 @@ sub _load_if_needed {
 
     return;
 }
+
+=head2 _save_if_needed
+
+Write fixture interactions to disk if required.
+
+=head3 Purpose
+
+Serialize and write recorded interactions to the fixture file at the
+end of a record-mode run.
+
+=head3 Arguments
+
+None.
+
+=head3 Returns
+
+Nothing.
+
+=head3 Side Effects
+
+Writes to the fixture file on disk.
+
+=head3 Notes
+
+Only active in record mode.
+
+=cut
 
 sub _save_if_needed {
     my ($self) = @_;
@@ -270,6 +604,38 @@ sub _save_if_needed {
     return;
 }
 
+=head2 _normalize_request
+
+Normalize an adapter-specific request object.
+
+=head3 Purpose
+
+Convert a request object into a stable, serializable hash structure.
+
+=head3 Arguments
+
+=over 4
+
+=item * req (Object)
+
+Adapter-specific request object.
+
+=back
+
+=head3 Returns
+
+Hashref representing the normalized request.
+
+=head3 Side Effects
+
+None.
+
+=head3 Notes
+
+Delegates to the adapter.
+
+=cut
+
 sub _normalize_request {
     my ($self, $req) = @_;
 
@@ -281,6 +647,39 @@ sub _normalize_request {
     return $self->{adapter}->normalize_request($req);
 }
 
+=head2 _normalize_response
+
+Normalize an adapter-specific response object.
+
+=head3 Purpose
+
+Convert a response object into a stable, serializable hash structure.
+
+=head3 Arguments
+
+=over 4
+
+=item * res (Object)
+
+Adapter-specific response object.
+
+=back
+
+=head3 Returns
+
+Hashref representing the normalized response.
+
+=head3 Side Effects
+
+None.
+
+=head3 Notes
+
+Delegates to the adapter.
+
+=cut
+
+
 sub _normalize_response {
     my ($self, $res) = @_;
 
@@ -291,6 +690,39 @@ sub _normalize_response {
 
     return $self->{adapter}->normalize_response($res);
 }
+
+=head2 _denormalize_response
+
+Reconstruct an adapter-specific response object.
+
+=head3 Purpose
+
+Convert a stored response hash back into a real HTTP::Response object.
+
+=head3 Arguments
+
+=over 4
+
+=item * hash (HashRef)
+
+Normalized response structure.
+
+=back
+
+=head3 Returns
+
+A real HTTP::Response object.
+
+=head3 Side Effects
+
+None.
+
+=head3 Notes
+
+Delegates to the adapter.
+
+=cut
+
 
 sub _denormalize_response {
     my ($self, $hash) = @_;
@@ -325,6 +757,44 @@ sub _find_match {
     return;
 }
 
+=head2 _requests_match
+
+Compare two normalized request hashes.
+
+=head3 Purpose
+
+Determine whether an incoming request matches the expected request in
+the fixture.
+
+=head3 Arguments
+
+=over 4
+
+=item * exp (HashRef)
+
+Expected normalized request.
+
+=item * got (HashRef)
+
+Actual normalized request.
+
+=back
+
+=head3 Returns
+
+Boolean true if method and URI match.
+
+=head3 Side Effects
+
+None.
+
+=head3 Notes
+
+Header and body matching may be added later.
+
+=cut
+
+
 sub _requests_match {
     my ($self, $exp, $got) = @_;
 
@@ -334,6 +804,47 @@ sub _requests_match {
     # you can extend this later to headers/body if desired
     return 1;
 }
+
+=head2 _request_diff_string
+
+Produce a human-readable diff for mismatched requests.
+
+=head3 Purpose
+
+Generate a diagnostic string showing differences between expected and
+actual requests.
+
+=head3 Arguments
+
+=over 4
+
+=item * exp (HashRef)
+
+Expected request.
+
+=item * got (HashRef)
+
+Actual request.
+
+=item * idx (Int)
+
+Interaction index.
+
+=back
+
+=head3 Returns
+
+A multi-line string describing the mismatch.
+
+=head3 Side Effects
+
+None.
+
+=head3 Notes
+
+Used only when diffing is enabled.
+
+=cut
 
 sub _request_diff_string {
     my ($self, $exp, $got, $idx) = @_;
@@ -370,136 +881,3 @@ sub _request_diff_string {
 1;
 
 __END__
-
-=head1 NAME
-
-Test::HTTP::Scenario - Record and replay HTTP interactions for deterministic tests
-
-=head1 SYNOPSIS
-
-  use Test::Most;
-  use Test::HTTP::Scenario qw(with_http_scenario);
-
-  with_http_scenario(
-      name    => 'get_user_basic',
-      file    => 't/fixtures/get_user_basic.yaml',
-      mode    => 'replay',
-      adapter => 'LWP',
-      sub {
-          my $user = $client->get_user(42);
-          cmp_deeply($user, superhashof({ id => 42 }));
-      },
-  );
-
-=head1 DESCRIPTION
-
-Test::HTTP::Scenario provides a record and replay mechanism for HTTP
-interactions so that tests for API clients can run deterministically
-without depending on live network access.
-
-It works by installing temporary hooks into supported HTTP client
-libraries, capturing requests and responses in record mode, and
-replaying them from fixture files in replay mode.
-
-=head2 API specification
-
-=head3 Input
-
-=head4 new
-
-Schema compatible with Params::Validate::Strict:
-
-=over 4
-
-=item * name (Str, required)
-
-Scenario name.
-
-=item * file (Str, required)
-
-Path to the fixture file.
-
-=item * mode (Str, required)
-
-Either C<record> or C<replay>.
-
-=item * adapter (Str|Object, required)
-
-Adapter name such as C<LWP> or an adapter object.
-
-=item * serializer (Str, optional)
-
-Serializer name, default C<YAML>.
-
-=item * diffing (Bool, optional)
-
-Enable or disable diffing, default true.
-
-=item * strict (Bool, optional)
-
-Enable or disable strict behaviour, default false.
-
-=back
-
-=head4 with_http_scenario
-
-Same as C<new>, passed as key value pairs, followed by a coderef.
-
-=head3 Output
-
-=head4 new
-
-Schema compatible with Returns::Set:
-
-=over 4
-
-=item * object
-
-A L<Test::HTTP::Scenario> instance.
-
-=back
-
-=head4 with_http_scenario
-
-Returns whatever the supplied coderef returns, in the same context.
-
-=head1 METHODS
-
-=head2 new
-
-Constructs a new scenario object. See L</API specification> for
-arguments and return values.
-
-=head2 run
-
-Runs a coderef under the control of the scenario. Installs adapter
-hooks, loads fixtures in replay mode, and saves fixtures in record
-mode.
-
-=head2 with_http_scenario
-
-Convenience wrapper that constructs a scenario and immediately calls
-C<run> with the supplied coderef.
-
-=head2 handle_request
-
-Called by adapters to either perform a real HTTP request in record
-mode or to replay a stored response in replay mode.
-
-=head1 SIDE EFFECTS
-
-This module reads from and writes to fixture files on disk and
-temporarily modifies behaviour of supported HTTP client libraries
-through adapter modules.
-
-=head1 NOTES
-
-This module is intended for use in test suites and should not be used
-in production code paths.
-
-=head1 EXAMPLE
-
-See the SYNOPSIS for a basic example of using C<with_http_scenario>
-with an API client.
-
-=cut
