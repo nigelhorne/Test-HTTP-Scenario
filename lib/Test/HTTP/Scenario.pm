@@ -42,6 +42,7 @@ my $adapter = _build_adapter($args{adapter});
         loaded       => 0,
         diffing      => $args{diffing} // 1,
         strict       => $args{strict}  // 0,
+	_cursor => 0
     }, $class;
 
     $adapter->set_scenario($self);
@@ -56,41 +57,43 @@ my $adapter = _build_adapter($args{adapter});
 sub run {
     my ($self, $code) = @_;
 
-    # Attach scenario to adapter
     my $adapter = $self->{adapter};
     $adapter->set_scenario($self);
 
-    # Load fixtures if needed (replay mode)
     $self->_load_if_needed;
-
-    # Install hooks
     $adapter->install;
 
+    # ensure uninstall + save ALWAYS run
+    my $guard = Test::HTTP::Scenario::Guard->new(sub {
+        $adapter->uninstall;
+        $self->_save_if_needed;
+    });
+
     my $wantarray = wantarray;
+
     my (@ret, $ret);
 
-    my $ok = eval {
-        if (!defined $wantarray) {
-            $code->();
+    # *** NO eval here ***
+    if (!defined $wantarray) {
+        $code->();
+    }
+    elsif ($wantarray) {
+        @ret = $code->();
+    }
+    else {
+        $ret = $code->();
+    }
+
+    # strict mode AFTER callback, BEFORE returning
+    if ($self->{mode} eq 'replay' && $self->{strict}) {
+        my $total  = @{ $self->{interactions} || [] };
+        my $cursor = $self->{_cursor} // 0;
+
+        if ($cursor < $total) {
+            croak "Strict mode: $total interactions recorded, "
+                . "but only $cursor were used";
         }
-        elsif ($wantarray) {
-            @ret = $code->();
-        }
-        else {
-            $ret = $code->();
-        }
-        1;
-    };
-
-    my $err = $@;
-
-    # Always uninstall exactly once
-    $adapter->uninstall;
-
-    # Save fixtures if needed (record mode)
-    $self->_save_if_needed;
-
-    die $err unless $ok;
+    }
 
     return undef      if !defined $wantarray;
     return @ret       if $wantarray;
@@ -121,11 +124,6 @@ sub with_http_scenario {
 sub handle_request {
 	my ($self, $req, $do_real) = @_;
 
-    # Entry: adapter specific request and coderef to perform real request
-    # Exit:  adapter specific response object
-    # Side effects: may append to interactions or read from them
-    # Notes: central record or replay logic
-
     croak 'handle_request() requires a coderef for real request'
         unless ref $do_real eq 'CODE';
 
@@ -142,11 +140,38 @@ sub handle_request {
         return $res;
     }
 
-    my $match = $self->_find_match($req);
+    # replay mode
+    $self->_load_if_needed;
 
-    croak 'No matching HTTP interaction found in scenario' unless $match;
+    my $idx = $self->{_cursor} // 0;
+    my $interactions = $self->{interactions} || [];
 
-    return $self->_denormalize_response($match->{response});
+    if ($idx > $#$interactions) {
+        croak 'No more recorded HTTP interactions available in scenario';
+    }
+
+    my $expected = $interactions->[$idx]{request}  || {};
+    my $stored   = $interactions->[$idx]{response} || {};
+
+    my $got = $self->_normalize_request($req);
+
+    my $match = $self->_requests_match($expected, $got);
+
+    if (!$match) {
+        my $msg = 'No matching HTTP interaction found in scenario';
+
+        if ($self->{diffing}) {
+            my $diff = $self->_request_diff_string($expected, $got, $idx);
+            $msg .= "\n$diff";
+        }
+
+        croak $msg;
+    }
+    
+	# consume this interaction
+	$self->{_cursor}++;
+
+	return $self->_denormalize_response($stored);
 }
 
 #----------------------------------------------------------------------#
@@ -154,7 +179,7 @@ sub handle_request {
 #----------------------------------------------------------------------#
 
 sub _build_adapter {
-    my ($adapter) = @_;
+	my $adapter = $_[0];
 
     # Entry: adapter name or object
     # Exit:  adapter object
@@ -299,6 +324,48 @@ sub _find_match {
 
     return;
 }
+
+sub _requests_match {
+    my ($self, $exp, $got) = @_;
+
+    return 0 unless ($exp->{method} || '') eq ($got->{method} || '');
+    return 0 unless ($exp->{uri}    || '') eq ($got->{uri}    || '');
+
+    # you can extend this later to headers/body if desired
+    return 1;
+}
+
+sub _request_diff_string {
+    my ($self, $exp, $got, $idx) = @_;
+
+    require Data::Dumper;
+    local $Data::Dumper::Terse  = 1;
+    local $Data::Dumper::Indent = 1;
+
+    return
+      "HTTP interaction mismatch at index $idx:\n"
+    . "  Expected method: $exp->{method}\n"
+    . "       Got method: $got->{method}\n"
+    . "  Expected uri:    $exp->{uri}\n"
+    . "       Got uri:    $got->{uri}\n"
+    . "  Expected request hash:\n"
+    . Data::Dumper::Dumper($exp)
+    . "  Got request hash:\n"
+    . Data::Dumper::Dumper($got);
+}
+
+{
+    package Test::HTTP::Scenario::Guard;
+    sub new {
+        my ($class, $cb) = @_;
+        bless $cb, $class;
+    }
+    sub DESTROY {
+        my ($self) = @_;
+        $self->();
+    }
+}
+
 
 1;
 
