@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-# TODO: use a temporary directory, not t/fixtures
+# FIXME: use a temporary directory, not t/fixtures
 
 use Test::Most;
 # use Test::Warnings;
