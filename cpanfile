@@ -15,6 +15,7 @@ on 'configure' => sub {
 	requires 'ExtUtils::MakeMaker', '6.64';
 };
 on 'test' => sub {
+	requires 'HTTP::Server::Simple::CGI';
 	requires 'Test::Compile';
 	requires 'Test::DescribeMe';
 	requires 'Test::Most';

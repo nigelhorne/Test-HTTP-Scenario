@@ -26,6 +26,7 @@ WriteMakefile(
 	CONFIGURE_REQUIRES => {
 		'ExtUtils::MakeMaker' => 6.64,	# Minimum version for TEST_REQUIRES
 	}, TEST_REQUIRES => {
+		'HTTP::Server::Simple::CGI' => 0,
 		'Test::Compile' => 0,
 		'Test::DescribeMe' => 0,
 		'Test::Most' => 0,
