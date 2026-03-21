@@ -31,7 +31,7 @@ Test::HTTP::Scenario - Deterministic record/replay of HTTP interactions for test
 
 =head1 DESCRIPTION
 
-Test::HTTP::Scenario lets you test HTTP‑based code without ever hitting the real network,
+Test::HTTP::Scenario lets you test HTTP-based code without ever hitting the real network,
 by recording real interactions once and replaying them forever.
 It provides a deterministic record/replay mechanism
 for HTTP-based test suites. It allows you to capture real HTTP
@@ -310,7 +310,7 @@ sub new {
 	croak "Invalid mode '$args{mode}'"
 		unless $args{mode} =~ /\A(?:record|replay)\z/;
 
-my $adapter = _build_adapter($args{adapter});
+	my $adapter = _build_adapter($args{adapter});
 	
 	my $serializer = _build_serializer($args{serializer} || 'YAML');
 
@@ -815,4 +815,74 @@ sub _request_diff_string {
 
 1;
 
-__END__
+=head1 AUTHOR
+
+Nigel Horne, C<< <njh at nigelhorne.com> >>
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+=back
+
+=head1 REPOSITORY
+
+L<https://github.com/nigelhorne/Test-HTTP-Scenario>
+
+=head1 SUPPORT
+
+This module is provided as-is without any warranty.
+
+Please report any bugs or feature requests to C<bug-test-http-scenario at rt.cpan.org>,
+or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-HTTP-Scenario>.
+I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Test::HTTP::Scenario
+
+You can also look for information at:
+
+=over 4
+
+=item * MetaCPAN
+
+L<https://metacpan.org/dist/Test-HTTP-Scenario>
+
+=item * RT: CPAN's request tracker
+
+L<https://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-HTTP-Scenario>
+
+=item * CPAN Testers' Matrix
+
+L<http://matrix.cpantesters.org/?dist=Test-HTTP-Scenario>
+
+=item * CPAN Testers Dependencies
+
+L<http://deps.cpantesters.org/?module=Test::HTTP::Scenario>
+
+=back
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright 2010-2026 Nigel Horne.
+
+Usage is subject to licence terms.
+
+The licence terms of this software are as follows:
+
+=over 4
+
+=item * Personal single user, single computer use: GPL2
+
+=item * All other users (including Commercial, Charity, Educational, Government)
+  must apply in writing for a licence for use from Nigel Horne at the
+  above e-mail.
+
+=back
+
+=cut
+
+1;

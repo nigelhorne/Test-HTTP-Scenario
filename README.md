@@ -20,7 +20,7 @@ Test::HTTP::Scenario - Deterministic record/replay of HTTP interactions for test
 
 # DESCRIPTION
 
-Test::HTTP::Scenario lets you test HTTP‑based code without ever hitting the real network,
+Test::HTTP::Scenario lets you test HTTP-based code without ever hitting the real network,
 by recording real interactions once and replaying them forever.
 It provides a deterministic record/replay mechanism
 for HTTP-based test suites. It allows you to capture real HTTP
@@ -330,10 +330,67 @@ request against stored interactions and returns a synthetic response.
 Matching is currently based on method and URI only. Diffing mode
 produces detailed mismatch diagnostics.
 
+# AUTHOR
+
+Nigel Horne, `<njh at nigelhorne.com>`
+
+# BUGS
+
+# SEE ALSO
+
+# REPOSITORY
+
+[https://github.com/nigelhorne/Test-HTTP-Scenario](https://github.com/nigelhorne/Test-HTTP-Scenario)
+
+# SUPPORT
+
+This module is provided as-is without any warranty.
+
+Please report any bugs or feature requests to `bug-test-http-scenario at rt.cpan.org`,
+or through the web interface at
+[http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-HTTP-Scenario](http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-HTTP-Scenario).
+I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Test::HTTP::Scenario
+
+You can also look for information at:
+
+- MetaCPAN
+
+    [https://metacpan.org/dist/Test-HTTP-Scenario](https://metacpan.org/dist/Test-HTTP-Scenario)
+
+- RT: CPAN's request tracker
+
+    [https://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-HTTP-Scenario](https://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-HTTP-Scenario)
+
+- CPAN Testers' Matrix
+
+    [http://matrix.cpantesters.org/?dist=Test-HTTP-Scenario](http://matrix.cpantesters.org/?dist=Test-HTTP-Scenario)
+
+- CPAN Testers Dependencies
+
+    [http://deps.cpantesters.org/?module=Test::HTTP::Scenario](http://deps.cpantesters.org/?module=Test::HTTP::Scenario)
+
+# LICENCE AND COPYRIGHT
+
+Copyright 2010-2026 Nigel Horne.
+
+Usage is subject to licence terms.
+
+The licence terms of this software are as follows:
+
+- Personal single user, single computer use: GPL2
+- All other users (including Commercial, Charity, Educational, Government)
+  must apply in writing for a licence for use from Nigel Horne at the
+  above e-mail.
+
 # POD ERRORS
 
 Hey! **The above document had some coding errors, which are explained below:**
 
-- Around line 34:
+- Around line 826:
 
-    Non-ASCII character seen before =encoding in 'HTTP‑based'. Assuming UTF-8
+    &#x3d;back without =over
