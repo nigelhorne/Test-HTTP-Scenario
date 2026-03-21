@@ -1,3 +1,4 @@
+cpanfile
 lib/Test/HTTP/Scenario.pm
 lib/Test/HTTP/Scenario/Adapter/LWP.pm
 lib/Test/HTTP/Scenario/Cookbook.pod

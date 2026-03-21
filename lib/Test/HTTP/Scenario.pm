@@ -328,7 +328,7 @@ sub new {
 		loaded	   => 0,
 		diffing	  => $args{diffing} // 1,
 		strict	   => $args{strict}  // 0,
-	_cursor => 0
+		_cursor => 0
 	}, $class;
 
 	$adapter->set_scenario($self);
