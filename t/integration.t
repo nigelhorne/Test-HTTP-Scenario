@@ -1,6 +1,8 @@
 use strict;
 use warnings;
 
+# TODO: use a temporary directory, not t/fixtures
+
 use Test::Most;
 # use Test::Warnings;
 # use Test::Strict;
@@ -40,7 +42,7 @@ my $orig_request = LWP::UserAgent->can('request');
 		print "HTTP/1.0 200 OK\r\n";
 		print "Content-Type: text/plain\r\n\r\n";
 
-		print $path eq '/hello' ? "hello world" : "unknown";
+		print $path eq '/hello' ? 'hello world' : 'unknown';
 	}
 }
 
@@ -65,44 +67,41 @@ sub _wait_for_port {
 }
 
 sub _start_server {
-    my $server = Local::HTTP::Server->new($PORT);
+	my $server = Local::HTTP::Server->new($PORT);
 
-    my $pid;
+	my $pid;
 
-    if ($^O eq 'MSWin32') {
-        # Windows: HTTP::Server::Simple provides background()
-        $pid = $server->background;
-    }
-    else {
-        # Unix-like: fork works normally
-        $pid = fork();
-        BAIL_OUT("fork failed") unless defined $pid;
+	if ($^O eq 'MSWin32') {
+		# Windows: HTTP::Server::Simple provides background()
+		$pid = $server->background();
+	} else {
+		# Unix-like: fork works normally
+		$pid = fork();
+		BAIL_OUT('fork failed') unless defined $pid;
 
-        if ($pid == 0) {
-            $server->run;
-            exit 0;
-        }
-    }
+		if ($pid == 0) {
+			$server->run;
+			exit 0;
+		}
+	}
 
-    _wait_for_port($PORT, 5);
-    return $pid;
+	_wait_for_port($PORT, 5);
+	return $pid;
 }
 
 sub _stop_server {
-    my ($pid) = @_;
-    return unless $pid;
+	my ($pid) = @_;
+	return unless $pid;
 
-    if ($^O eq 'MSWin32') {
-        # background() on Windows uses Win32::Process internally
-        kill 'TERM', $pid;
-        sleep 1;
-    }
-    else {
-        kill 'TERM', $pid;
-        waitpid $pid, 0;
-    }
+	if ($^O eq 'MSWin32') {
+		# background() on Windows uses Win32::Process internally
+		kill 'TERM', $pid;
+		sleep 1;
+	} else {
+		kill 'TERM', $pid;
+		waitpid $pid, 0;
+	}
 }
-
 
 #----------------------------------------------------------------------#
 # Record
@@ -163,6 +162,7 @@ subtest 'replay scenario without server' => sub {
 	});
 
 	# let $sc and $adapter go out of scope here
+	unlink $file;
 };
 
 #----------------------------------------------------------------------#
@@ -211,6 +211,7 @@ subtest 'multiple interactions record + replay' => sub {
 		my $r2 = $ua->get("http://127.0.0.1:$PORT/hello");
 		ok $r2->is_success;
 	});
+	unlink $file;
 };
 
 #----------------------------------------------------------------------#
@@ -253,6 +254,7 @@ subtest 'strict mode enforces full consumption' => sub {
 			$ua->get("http://127.0.0.1:$PORT/hello");   # only one request
 		});
 	} 'strict mode croaks when not all interactions are consumed';
+	unlink $file;
 };
 
 #----------------------------------------------------------------------#
@@ -290,12 +292,14 @@ subtest 'diffing shows mismatch details' => sub {
 	);
 
 	dies_ok {
-			$sc2->run(sub {
-				$ua->get("http://127.0.0.1:$PORT/wrong");
-			});
+		$sc2->run(sub {
+			$ua->get("http://127.0.0.1:$PORT/wrong");
+		});
 	} 'mismatched request dies';
-		my $error = $@;
 
+	my $error = $@;
+
+	unlink $file;
 	like $error, qr/Expected uri:.*hello/s,
 		'diff output contains expected URI';
 	like $error, qr/Got uri:.*wrong/s,
@@ -345,13 +349,14 @@ subtest 'mismatch produces no warnings (only exception)' => sub {
 		});
 	} 'mismatch dies cleanly';
 
+	unlink $file;
 	is scalar(@warnings), 0, 'no warnings emitted on mismatch';
 };
-
 
 #----------------------------------------------------------------------#
 # GLOBAL TEARDOWN
 #----------------------------------------------------------------------#
+rmdir('t/fixtures');
 
 is(
 	LWP::UserAgent->can('request'),
@@ -359,4 +364,4 @@ is(
 	'LWP::UserAgent::request restored after all scenarios'
 );
 
-done_testing;
+done_testing();
