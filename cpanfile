@@ -17,6 +17,7 @@ on 'test' => sub {
 	requires 'Test::DescribeMe';
 	requires 'Test::Most';
 	requires 'Test::Needs';
+	requires 'Test::Returns';
 	requires 'Test::Strict';
 	requires 'Test::Vars';
 	requires 'Test::Warnings';
