@@ -8,10 +8,15 @@ use Scalar::Util qw(blessed);
 use File::Slurper qw(read_text write_text);
 
 our @EXPORT_OK = qw(with_http_scenario);
+our $VERSION = '0.01';
 
 =head1 NAME
 
 Test::HTTP::Scenario - Deterministic record/replay of HTTP interactions for test suites
+
+=head1 VERSION
+
+Version 0.01
 
 =head1 SYNOPSIS
 
@@ -307,8 +312,7 @@ sub new {
 		croak "Missing required argument '$k'" unless exists $args{$k};
 	}
 
-	croak "Invalid mode '$args{mode}'"
-		unless $args{mode} =~ /\A(?:record|replay)\z/;
+	croak "Invalid mode '$args{mode}'" unless $args{mode} =~ /\A(?:record|replay)\z/;
 
 	my $adapter = _build_adapter($args{adapter});
 	
