@@ -23,16 +23,14 @@ use Scalar::Util qw(blessed);
 #   - installed/uninstalled counters guard install/uninstall
 #
 sub new {
-    my ($class) = @_;
+	my $class = $_[0];
 
-    my $self = bless {
-        scenario       => undef,   # scenario object (set via set_scenario)
-        installed      => 0,       # install() guard counter
-        uninstalled    => 0,       # uninstall() guard counter
-        _orig_request  => undef,   # original LWP::UserAgent::request coderef
-    }, $class;
-
-    return $self;
+	return bless {
+		scenario       => undef,   # scenario object (set via set_scenario)
+		installed      => 0,       # install() guard counter
+		uninstalled    => 0,       # uninstall() guard counter
+		_orig_request  => undef,   # original LWP::UserAgent::request coderef
+	}, $class;
 }
 
 #----------------------------------------------------------------------#
@@ -51,9 +49,10 @@ sub new {
 #   - no weaken() because scenario lifetime is controlled by tests
 #
 sub set_scenario {
-    my ($self, $scenario) = @_;
-    $self->{scenario} = $scenario;
-    return;
+	my ($self, $scenario) = @_;
+	$self->{scenario} = $scenario;
+
+	return;
 }
 
 #----------------------------------------------------------------------#

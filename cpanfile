@@ -4,7 +4,9 @@ requires 'perl', '5.008';
 
 requires 'Carp';
 requires 'ExtUtils::MakeMaker', '6.64';
+requires 'File::Slurper';
 requires 'LWP::UserAgent';
+requires 'Scalar::Util';
 requires 'autodie';
 requires 'strict';
 requires 'warnings';

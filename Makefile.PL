@@ -40,7 +40,9 @@ WriteMakefile(
 		'warnings' => 0,
 		'Carp' => 0,
 		'ExtUtils::MakeMaker' => 6.64,	# Minimum version for TEST_REQUIRES
+		'File::Slurper' => 0,
 		'LWP::UserAgent' => 0,
+		'Scalar::Util' => 0,
 	}, dist => $dist,
 	clean		=> { FILES => 'Test::HTTP::Scenario-*' },
 	# META_ADD => {
