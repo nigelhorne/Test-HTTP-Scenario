@@ -26,17 +26,19 @@ WriteMakefile(
 	CONFIGURE_REQUIRES => {
 		'ExtUtils::MakeMaker' => 6.64,	# Minimum version for TEST_REQUIRES
 	}, TEST_REQUIRES => {
-		'autodie' => 0,
-		'strict' => 0,
-		'warnings' => 0,
 		'Test::Compile' => 0,
 		'Test::DescribeMe' => 0,
 		'Test::Most' => 0,
 		'Test::Needs' => 0,
+		'Test::Strict' => 0,
 		'Test::Warnings' => 0,
 	}, PREREQ_PM => {
+		'autodie' => 0,
+		'strict' => 0,
+		'warnings' => 0,
 		'Carp' => 0,
 		'ExtUtils::MakeMaker' => 6.64,	# Minimum version for TEST_REQUIRES
+		'LWP::UserAgent' => 0,
 	}, dist => $dist,
 	clean		=> { FILES => 'Test::HTTP::Scenario-*' },
 	# META_ADD => {

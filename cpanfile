@@ -4,6 +4,10 @@ requires 'perl', '5.008';
 
 requires 'Carp';
 requires 'ExtUtils::MakeMaker', '6.64';
+requires 'LWP::UserAgent';
+requires 'autodie';
+requires 'strict';
+requires 'warnings';
 
 on 'configure' => sub {
 	requires 'ExtUtils::MakeMaker', '6.64';
@@ -13,10 +17,8 @@ on 'test' => sub {
 	requires 'Test::DescribeMe';
 	requires 'Test::Most';
 	requires 'Test::Needs';
+	requires 'Test::Strict';
 	requires 'Test::Warnings';
-	requires 'autodie';
-	requires 'strict';
-	requires 'warnings';
 };
 on 'develop' => sub {
 	requires 'Devel::Cover';
