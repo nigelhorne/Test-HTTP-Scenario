@@ -423,7 +423,7 @@ sub run {
 		}
 	}
 
-	return undef	  if !defined $wantarray;
+	return if !defined $wantarray;
 	return @ret	   if $wantarray;
 	return $ret;
 }
@@ -604,18 +604,19 @@ sub _build_adapter {
 	my $class = $map{$adapter}
 		or croak "Unknown adapter '$adapter'";
 
+	## no critic (ProhibitStringyEval)
 	eval "require $class" or croak "Failed to load $class: $@";
 
-	return $class->new;
+	return $class->new();
 }
+
+# Entry: serializer name
+# Exit:  serializer object
+# Side effects: may load serializer class
+# Notes: supports YAML and JSON by name
 
 sub _build_serializer {
 	my ($name) = @_;
-
-	# Entry: serializer name
-	# Exit:  serializer object
-	# Side effects: may load serializer class
-	# Notes: supports YAML and JSON by name
 
 	my %map = (
 		YAML => 'Test::HTTP::Scenario::Serializer::YAML',
@@ -625,9 +626,10 @@ sub _build_serializer {
 	my $class = $map{$name}
 		or croak "Unknown serializer '$name'";
 
+	## no critic (ProhibitStringyEval)
 	eval "require $class" or croak "Failed to load $class: $@";
 
-	return $class->new;
+	return $class->new();
 }
 
 # Load fixture interactions from disk if required.
