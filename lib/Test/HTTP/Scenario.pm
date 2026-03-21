@@ -827,8 +827,6 @@ Nigel Horne, C<< <njh at nigelhorne.com> >>
 
 =head1 SEE ALSO
 
-=back
-
 =head1 REPOSITORY
 
 L<https://github.com/nigelhorne/Test-HTTP-Scenario>
@@ -871,7 +869,7 @@ L<http://deps.cpantesters.org/?module=Test::HTTP::Scenario>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright 2010-2026 Nigel Horne.
+Copyright 2026 Nigel Horne.
 
 Usage is subject to licence terms.
 

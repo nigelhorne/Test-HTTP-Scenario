@@ -2,6 +2,10 @@
 
 Test::HTTP::Scenario - Deterministic record/replay of HTTP interactions for test suites
 
+# VERSION
+
+Version 0.01
+
 # SYNOPSIS
 
     use Test::Most;
@@ -376,7 +380,7 @@ You can also look for information at:
 
 # LICENCE AND COPYRIGHT
 
-Copyright 2010-2026 Nigel Horne.
+Copyright 2026 Nigel Horne.
 
 Usage is subject to licence terms.
 
@@ -386,11 +390,3 @@ The licence terms of this software are as follows:
 - All other users (including Commercial, Charity, Educational, Government)
   must apply in writing for a licence for use from Nigel Horne at the
   above e-mail.
-
-# POD ERRORS
-
-Hey! **The above document had some coding errors, which are explained below:**
-
-- Around line 826:
-
-    &#x3d;back without =over
