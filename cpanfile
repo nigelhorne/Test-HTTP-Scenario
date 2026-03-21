@@ -18,6 +18,7 @@ on 'test' => sub {
 	requires 'Test::Most';
 	requires 'Test::Needs';
 	requires 'Test::Strict';
+	requires 'Test::Vars';
 	requires 'Test::Warnings';
 };
 on 'develop' => sub {

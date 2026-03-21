@@ -31,6 +31,7 @@ WriteMakefile(
 		'Test::Most' => 0,
 		'Test::Needs' => 0,
 		'Test::Strict' => 0,
+		'Test::Vars' => 0,
 		'Test::Warnings' => 0,
 	}, PREREQ_PM => {
 		'autodie' => 0,
