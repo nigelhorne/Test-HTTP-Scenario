@@ -315,19 +315,18 @@ sub new {
 	croak "Invalid mode '$args{mode}'" unless $args{mode} =~ /\A(?:record|replay)\z/;
 
 	my $adapter = _build_adapter($args{adapter});
-	
 	my $serializer = _build_serializer($args{serializer} || 'YAML');
 
 	my $self = bless {
 		name		 => $args{name},
 		file		 => $args{file},
 		mode		 => $args{mode},
-		adapter	  => $adapter,
-		serializer   => $serializer,
+		adapter	=> $adapter,
+		serializer => $serializer,
 		interactions => [],
-		loaded	   => 0,
-		diffing	  => $args{diffing} // 1,
-		strict	   => $args{strict}  // 0,
+		loaded	 => 0,
+		diffing	=> $args{diffing} // 1,
+		strict	 => $args{strict}  // 0,
 		_cursor => 0
 	}, $class;
 
@@ -414,7 +413,7 @@ sub run {
 
 	# strict mode AFTER callback, BEFORE returning
 	if ($self->{mode} eq 'replay' && $self->{strict}) {
-		my $total  = @{ $self->{interactions} || [] };
+		my $total = @{ $self->{interactions} || [] };
 		my $cursor = $self->{_cursor} // 0;
 
 		if ($cursor < $total) {
@@ -572,7 +571,7 @@ sub handle_request {
 
 		croak $msg;
 	}
-	
+
 	# consume this interaction
 	$self->{_cursor}++;
 

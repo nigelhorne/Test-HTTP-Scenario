@@ -11,8 +11,9 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 
 use Test::HTTP::Scenario;
-use Test::HTTP::Scenario::Adapter::LWP;   # <-- add this
+use Test::HTTP::Scenario::Adapter::LWP;
 use LWP::UserAgent;
+use IO::Socket::INET;
 use HTTP::Server::Simple::CGI;
 
 BEGIN {
@@ -46,25 +47,62 @@ my $orig_request = LWP::UserAgent->can('request');
 my $PORT = 50080;
 my $URL  = "http://127.0.0.1:$PORT/hello";
 
+sub _wait_for_port {
+    my ($port, $timeout) = @_;
+    my $start = time;
+
+    while (time - $start < $timeout) {
+        my $sock = IO::Socket::INET->new(
+            PeerAddr => '127.0.0.1',
+            PeerPort => $port,
+            Proto    => 'tcp',
+        );
+        return 1 if $sock;
+        select undef, undef, undef, 0.05;
+    }
+
+    BAIL_OUT("Server on port $port did not start in time");
+}
+
 sub _start_server {
-	my $pid = fork();
-	BAIL_OUT("fork failed") unless defined $pid;
+    my $server = Local::HTTP::Server->new($PORT);
 
-	if ($pid == 0) {
-		my $server = Local::HTTP::Server->new($PORT);
-		$server->run;
-		exit 0;
-	}
+    my $pid;
 
-	sleep 1;
-	return $pid;
+    if ($^O eq 'MSWin32') {
+        # Windows: HTTP::Server::Simple provides background()
+        $pid = $server->background;
+    }
+    else {
+        # Unix-like: fork works normally
+        $pid = fork();
+        BAIL_OUT("fork failed") unless defined $pid;
+
+        if ($pid == 0) {
+            $server->run;
+            exit 0;
+        }
+    }
+
+    _wait_for_port($PORT, 5);
+    return $pid;
 }
 
 sub _stop_server {
-	my ($pid) = @_;
-	kill 'TERM', $pid if $pid;
-	waitpid $pid, 0;
+    my ($pid) = @_;
+    return unless $pid;
+
+    if ($^O eq 'MSWin32') {
+        # background() on Windows uses Win32::Process internally
+        kill 'TERM', $pid;
+        sleep 1;
+    }
+    else {
+        kill 'TERM', $pid;
+        waitpid $pid, 0;
+    }
 }
+
 
 #----------------------------------------------------------------------#
 # Record

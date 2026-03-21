@@ -106,27 +106,25 @@ subtest 'run() preserves list/scalar/void context' => sub {
         adapter => $adapter,
     );
 
-    my @list = $sc->run(sub { return (1, 2, 3) });
-    cmp_deeply(\@list, [1, 2, 3], 'list context preserved');
+	my @list = $sc->run(sub { return (1, 2, 3) });
+	cmp_deeply(\@list, [1, 2, 3], 'list context preserved');
 
-    my $scalar = $sc->run(sub { return 42 });
-    is $scalar, 42, 'scalar context preserved';
+	my $scalar = $sc->run(sub { return 42 });
+	is $scalar, 42, 'scalar context preserved';
 
-# VOID context
-{
-    # Call in true void context
-    $sc->run(sub { return 99 });
+	# VOID context
+	{
+		# Call in true void context
+		$sc->run(sub { return 99 });
 
-    # Capture the return value of a void-context call
-    my $ret = do {
-        $sc->run(sub { return 99 });   # void context here
-        undef;                         # scalar return value of the block
-    };
+		# Capture the return value of a void-context call
+		my $ret = do {
+			$sc->run(sub { return 99 });   # void context here
+			undef;                         # scalar return value of the block
+		};
 
-    ok(!defined $ret, 'void context preserved (run returns undef in void context)');
-}
-
-    
+		ok(!defined $ret, 'void context preserved (run returns undef in void context)');
+	}
 };
 
 #----------------------------------------------------------------------#
