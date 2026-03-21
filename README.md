@@ -20,7 +20,9 @@ Test::HTTP::Scenario - Deterministic record/replay of HTTP interactions for test
 
 # DESCRIPTION
 
-Test::HTTP::Scenario provides a deterministic record/replay mechanism
+Test::HTTP::Scenario lets you test HTTP‑based code without ever hitting the real network,
+by recording real interactions once and replaying them forever.
+It provides a deterministic record/replay mechanism
 for HTTP-based test suites. It allows you to capture real HTTP
 interactions once (record mode) and replay them later without network
 access (replay mode). This makes API client tests fast, hermetic, and
@@ -181,23 +183,6 @@ correctly across multiple calls.
 - Diffing mode provides detailed diagnostics when a request does not match.
 - Fixtures are stable across platforms and Perl versions.
 
-## API Specification
-
-### Input (Params::Validate::Strict)
-
-    name      => Str
-    file      => Str
-    mode      => 'record' | 'replay'
-    adapter   => Str | Object
-    serializer => Str (optional)
-    diffing   => Bool (optional)
-    strict    => Bool (optional)
-    CODE      => Coderef
-
-### Output (Returns::Set)
-
-    any value returned by the supplied coderef
-
 # METHODS
 
 ## new
@@ -345,196 +330,10 @@ request against stored interactions and returns a synthetic response.
 Matching is currently based on method and URI only. Diffing mode
 produces detailed mismatch diagnostics.
 
-## \_load\_if\_needed
+# POD ERRORS
 
-Load fixture interactions from disk if required.
+Hey! **The above document had some coding errors, which are explained below:**
 
-### Purpose
+- Around line 34:
 
-Populate the scenario's interactions array when in replay mode and the
-fixture has not yet been loaded.
-
-### Arguments
-
-None.
-
-### Returns
-
-Nothing.
-
-### Side Effects
-
-Reads the fixture file from disk if it exists.
-
-### Notes
-
-Idempotent. Does nothing if already loaded or not in replay mode.
-
-## \_save\_if\_needed
-
-Write fixture interactions to disk if required.
-
-### Purpose
-
-Serialize and write recorded interactions to the fixture file at the
-end of a record-mode run.
-
-### Arguments
-
-None.
-
-### Returns
-
-Nothing.
-
-### Side Effects
-
-Writes to the fixture file on disk.
-
-### Notes
-
-Only active in record mode.
-
-## \_normalize\_request
-
-Normalize an adapter-specific request object.
-
-### Purpose
-
-Convert a request object into a stable, serializable hash structure.
-
-### Arguments
-
-- req (Object)
-
-    Adapter-specific request object.
-
-### Returns
-
-Hashref representing the normalized request.
-
-### Side Effects
-
-None.
-
-### Notes
-
-Delegates to the adapter.
-
-## \_normalize\_response
-
-Normalize an adapter-specific response object.
-
-### Purpose
-
-Convert a response object into a stable, serializable hash structure.
-
-### Arguments
-
-- res (Object)
-
-    Adapter-specific response object.
-
-### Returns
-
-Hashref representing the normalized response.
-
-### Side Effects
-
-None.
-
-### Notes
-
-Delegates to the adapter.
-
-## \_denormalize\_response
-
-Reconstruct an adapter-specific response object.
-
-### Purpose
-
-Convert a stored response hash back into a real HTTP::Response object.
-
-### Arguments
-
-- hash (HashRef)
-
-    Normalized response structure.
-
-### Returns
-
-A real HTTP::Response object.
-
-### Side Effects
-
-None.
-
-### Notes
-
-Delegates to the adapter.
-
-## \_requests\_match
-
-Compare two normalized request hashes.
-
-### Purpose
-
-Determine whether an incoming request matches the expected request in
-the fixture.
-
-### Arguments
-
-- exp (HashRef)
-
-    Expected normalized request.
-
-- got (HashRef)
-
-    Actual normalized request.
-
-### Returns
-
-Boolean true if method and URI match.
-
-### Side Effects
-
-None.
-
-### Notes
-
-Header and body matching may be added later.
-
-## \_request\_diff\_string
-
-Produce a human-readable diff for mismatched requests.
-
-### Purpose
-
-Generate a diagnostic string showing differences between expected and
-actual requests.
-
-### Arguments
-
-- exp (HashRef)
-
-    Expected request.
-
-- got (HashRef)
-
-    Actual request.
-
-- idx (Int)
-
-    Interaction index.
-
-### Returns
-
-A multi-line string describing the mismatch.
-
-### Side Effects
-
-None.
-
-### Notes
-
-Used only when diffing is enabled.
+    Non-ASCII character seen before =encoding in 'HTTP‑based'. Assuming UTF-8
